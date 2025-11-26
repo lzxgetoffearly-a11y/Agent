@@ -5,83 +5,55 @@ import { useRouter } from 'vue-router'
 
 const input = ref('')
 const loading = ref(false)
-const result = ref('')
-
 const { model } = useModels()
 const router = useRouter()
 
-async function createChat(prompt: string) {
-  input.value = prompt;
-  loading.value = true;
-  result.value = '';
+const quickChats = [
+  { label: 'Why use Nuxt UI?', icon: 'i-logos-nuxt-icon' },
+  { label: 'Help me create a Vue composable', icon: 'i-logos-vue' },
+  { label: 'Tell me more about UnJS', icon: 'i-logos-unjs' },
+  { label: 'Why should I consider VueUse?', icon: 'i-logos-vueuse' },
+  { label: 'Tailwind CSS best practices', icon: 'i-logos-tailwindcss-icon' },
+  { label: 'What is the weather in Bordeaux?', icon: 'i-lucide-sun' },
+  { label: 'Show me a chart of sales data', icon: 'i-lucide-line-chart' },
+]
 
-  let text = '';
-  let error = '';
+async function createChat(prompt: string) {
+  input.value = prompt
+  loading.value = true
+
+  let text = ''
+  let error = ''
 
   try {
-    // 调用 Nuxt server API
-    const res = await $fetch('/api/ai', {
+    const res = await $fetch('http://localhost:1338/ai', {
       method: 'POST',
+      headers: { "Content-Type": "application/json" },
       body: { input: prompt },
-    });
+    })
 
-    // Fastify 返回格式为 { result: "..." }
-    if (res && (res as any).result) {
-      text = (res as any).result;
-    } else {
-      error = '后端未返回结果';
-    }
+    text = (res as any).result || ''
+    error = (res as any).error || ''
   } catch (err: any) {
-    error = err?.message || '网络错误';
+    error = err?.message || '网络错误'
   } finally {
-    loading.value = false;
+    loading.value = false
   }
 
-  // 无论成功或失败都跳转到 result 页，结果通过 query 传递
+  // 跳转 result 页，传递用户输入 + 结果 + 错误
   router.push({
     path: '/result',
     query: {
+      prompt,
       text,
       error,
     },
-  });
+  })
 }
 
 function onSubmit() {
-  console.log('onSubmit triggered', input.value);
-  createChat(input.value);
+  createChat(input.value)
 }
-
-const quickChats = [
-  {
-    label: 'Why use Nuxt UI?',
-    icon: 'i-logos-nuxt-icon',
-  },
-  {
-    label: 'Help me create a Vue composable',
-    icon: 'i-logos-vue',
-  },
-  {
-    label: 'Tell me more about UnJS',
-    icon: 'i-logos-unjs',
-  },
-  {
-    label: 'Why should I consider VueUse?',
-    icon: 'i-logos-vueuse',
-  },
-  {
-    label: 'Tailwind CSS best practices',
-    icon: 'i-logos-tailwindcss-icon',
-  },
-  {
-    label: 'What is the weather in Bordeaux?',
-    icon: 'i-lucide-sun',
-  },
-  {
-    label: 'Show me a chart of sales data',
-    icon: 'i-lucide-line-chart',
-  },
-];
 </script>
 
 <template>
@@ -104,7 +76,6 @@ const quickChats = [
           @submit="onSubmit"
         >
           <UChatPromptSubmit color="neutral"/>
-
           <template #footer>
             <ModelSelect v-model="model" />
           </template>

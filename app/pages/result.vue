@@ -1,68 +1,73 @@
 <script setup lang="ts">
 import { useModels } from '@/composables/useModels'
-import { Chat } from '@ai-sdk/vue'
 import { getTextFromMessage } from '@nuxt/ui/utils/ai'
 import { useClipboard } from '@vueuse/core'
-import { DefaultChatTransport } from 'ai'
 import type { DefineComponent, UIMessage } from 'vue'
 import { onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import ProseStreamPre from '../components/prose/PreStream.vue'
 
-const components = {
-  pre: ProseStreamPre as unknown as DefineComponent
-}
-
 const route = useRoute()
-const toast = useToast()
-const clipboard = useClipboard()
 const { model } = useModels()
+const clipboard = useClipboard()
+const copied = ref(false)
 
-// ----------------------
-// 顶部对话框：显示 index.vue 传来的结果 / 错误
-// ----------------------
+// 顶部显示 index.vue 传来的结果/错误
 const text = route.query.text as string || ''
 const error = route.query.error as string || ''
 
-// ----------------------
-// Chat 原有逻辑
-// ----------------------
 const input = ref('')
-const copied = ref(false)
+const chat = ref<any>(null)
 
-const chat = new Chat({
-  id: 'session',
-  messages: [],
-  transport: new DefaultChatTransport({
-    api: `/api/ai`,
-    body: {
-      model: model.value
-    }
-  }),
-  onData: (dataPart) => {
-    if (dataPart.type === 'data-chat-title') {
-      // 可选刷新逻辑
-    }
-  },
-  onError(error) {
-    const { message } = typeof error.message === 'string' && error.message[0] === '{' ? JSON.parse(error.message) : error
-    toast.add({
-      description: message,
-      icon: 'i-lucide-alert-circle',
-      color: 'error',
-      duration: 0
+const components = { pre: ProseStreamPre as unknown as DefineComponent }
+
+// 发送消息函数
+async function sendMessage(msg: string) {
+  if (!msg.trim()) return
+
+  // 添加用户消息
+  chat.value.messages.push({
+    id: `user-${Date.now()}`,
+    role: 'user',
+    parts: [{ type: 'text', text: msg }],
+  })
+
+  try {
+    const res = await fetch('http://localhost:1338/ai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ input: msg }),
     })
-  }
-})
 
-function handleSubmit(e: Event) {
-  e.preventDefault()
-  if (input.value.trim()) {
-    chat.sendMessage({ text: input.value })
-    input.value = ''
+    if (!res.ok) {
+      const errText = await res.text()
+      throw new Error(errText)
+    }
+
+    const resultText = await res.text()
+
+    chat.value.messages.push({
+      id: `assistant-${Date.now()}`,
+      role: 'assistant',
+      parts: [{ type: 'text', text: resultText }],
+    })
+  } catch (err: any) {
+    chat.value.messages.push({
+      id: `error-${Date.now()}`,
+      role: 'assistant',
+      parts: [{ type: 'text', text: err.message || String(err) }],
+    })
   }
 }
 
+// 输入框提交
+function handleSubmit(e: Event) {
+  e.preventDefault()
+  sendMessage(input.value)
+  input.value = ''
+}
+
+// 复制消息
 function copy(e: MouseEvent, message: UIMessage) {
   clipboard.copy(getTextFromMessage(message))
   copied.value = true
@@ -70,8 +75,25 @@ function copy(e: MouseEvent, message: UIMessage) {
 }
 
 onMounted(() => {
-  if (chat.messages.length === 0 && text) {
-    // 可把顶部结果加入消息流（可选）
+  chat.value = {
+    messages: [],
+  }
+
+  // 如果首页传来的结果或错误，显示在顶部消息列表
+  if (text) {
+    chat.value.messages.push({
+      id: `initial-${Date.now()}`,
+      role: 'assistant',
+      parts: [{ type: 'text', text }],
+    })
+  }
+
+  if (error) {
+    chat.value.messages.push({
+      id: `error-${Date.now()}`,
+      role: 'assistant',
+      parts: [{ type: 'text', text: error }],
+    })
   }
 })
 </script>
@@ -85,7 +107,7 @@ onMounted(() => {
     <template #body>
       <UContainer class="flex-1 flex flex-col gap-4 sm:gap-6 pt-6 pb-32 items-center">
 
-        <!-- ⭐ 顶部显示 index.vue 传来的结果/错误 -->
+        <!-- 顶部显示 index.vue 传来的结果/错误 -->
         <div class="w-full max-w-lg flex flex-col gap-2">
           <div
             v-if="text"
@@ -102,12 +124,12 @@ onMounted(() => {
           </div>
         </div>
 
-        <!-- ⭐ Chat 消息列表 -->
+        <!-- Chat 消息列表 -->
         <UChatMessages
           should-auto-scroll
-          :messages="chat.messages"
-          :status="chat.status"
-          :assistant="chat.status !== 'streaming' ? { actions: [{ label: 'Copy', icon: copied ? 'i-lucide-copy-check' : 'i-lucide-copy', onClick: copy }] } : { actions: [] }"
+          :messages="chat?.messages"
+          :status="'ready'"
+          :assistant="{ actions: [{ label: copied ? 'Copied' : 'Copy', icon: copied ? 'i-lucide-copy-check' : 'i-lucide-copy', onClick: copy }] }"
           :spacing-offset="160"
           class="lg:pt-(--ui-header-height) pb-4 sm:pb-6 w-full max-w-lg"
         >
@@ -134,7 +156,7 @@ onMounted(() => {
 
       </UContainer>
 
-      <!-- ⭐ 底部发送框（居中、宽度合理、不遮导航栏） -->
+      <!-- 底部发送框 -->
       <div
         class="fixed left-1/2 transform -translate-x-1/2 bg-white dark:bg-black p-4
                border-t border-neutral-200 dark:border-neutral-800 rounded-t-xl shadow-lg"
