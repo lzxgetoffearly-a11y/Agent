@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { useModels } from '@/composables/useModels'
-import { ref } from 'vue'
+import { nextTick, ref } from 'vue'
 import { useRouter } from 'vue-router'
-
 const input = ref('')
 const loading = ref(false)
 const { model } = useModels()
@@ -34,6 +33,15 @@ async function createChat(prompt: string) {
 function onSubmit() {
   createChat(input.value)
 }
+
+function setQuickChat(label: string) {
+  input.value = label
+  nextTick(() => {
+    // 触发 UI 刷新，如果需要可聚焦输入框
+    const el = document.querySelector<HTMLInputElement>('.u-chat-prompt-input')
+    el?.focus()
+  })
+}
 </script>
 
 <template>
@@ -45,7 +53,7 @@ function onSubmit() {
     <template #body>
       <UContainer class="flex-1 flex flex-col justify-center gap-4 sm:gap-6 py-8">
         <h1 class="text-3xl sm:text-4xl text-highlighted font-bold">
-          How can I help you today?
+          Input needs, AI crafts tailored copy instantly!
         </h1>
 
         <UChatPrompt
@@ -56,9 +64,9 @@ function onSubmit() {
           @submit="onSubmit"
         >
           <UChatPromptSubmit color="neutral"/>
-          <template #footer>
+         <!--  <template #footer>
             <ModelSelect v-model="model" />
-          </template>
+          </template> -->
         </UChatPrompt>
 
         <div class="flex flex-wrap gap-2">
@@ -71,7 +79,7 @@ function onSubmit() {
             color="neutral"
             variant="outline"
             class="rounded-full"
-            @click="createChat(quickChat.label)"
+            @click="setQuickChat(quickChat.label)"
           />
         </div>
       </UContainer>

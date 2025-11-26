@@ -21,6 +21,7 @@ const chat = ref<any>(null)
 
 const components = { pre: ProseStreamPre as unknown as DefineComponent }
 
+
 // 发送消息函数
 async function sendMessage(msg: string) {
   if (!msg.trim()) return
@@ -44,13 +45,36 @@ async function sendMessage(msg: string) {
       throw new Error(errText)
     }
 
-    const resultText = await res.text()
+  const raw = await res.text()             // 拿到字符串
+  let data: { result?: string; error?: string } = {}
 
+  try {
+    data = JSON.parse(raw)                 // ⭐ 解析成对象
+  } catch (err) {
+    console.error('JSON parse failed:', err)
+    data.result = raw                      // 如果解析失败，就原样显示
+  }
+
+  const resultText = data.result || ''
+  const errorText = data.error || ''
+
+  if (resultText) {
     chat.value.messages.push({
       id: `assistant-${Date.now()}`,
       role: 'assistant',
       parts: [{ type: 'text', text: resultText }],
     })
+  }
+
+  if (errorText) {
+    chat.value.messages.push({
+      id: `error-${Date.now()}`,
+      role: 'assistant',
+      parts: [{ type: 'text', text: `🔥 ERROR: ${errorText}` }],
+    })
+  }
+   
+
   } catch (err: any) {
     chat.value.messages.push({
       id: `error-${Date.now()}`,
@@ -89,8 +113,7 @@ onMounted(async () => {
       role: 'user',
       parts: [{ type: 'text', text: prompt }],
     })
-
-    try {
+  try {
       const res = await fetch('http://localhost:1338/ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -102,13 +125,36 @@ onMounted(async () => {
         throw new Error(errText)
       }
 
-      const resultText = await res.text()
+    const raw = await res.text()             // 拿到字符串
+    let data: { result?: string; error?: string } = {}
 
+    try {
+      data = JSON.parse(raw)                 // ⭐ 解析成对象
+    } catch (err) {
+      console.error('JSON parse failed:', err)
+      data.result = raw                      // 如果解析失败，就原样显示
+    }
+
+    const resultText = data.result || ''
+    const errorText = data.error || ''
+
+    if (resultText) {
       chat.value.messages.push({
         id: `assistant-${Date.now()}`,
         role: 'assistant',
         parts: [{ type: 'text', text: resultText }],
       })
+    }
+
+    if (errorText) {
+      chat.value.messages.push({
+        id: `error-${Date.now()}`,
+        role: 'assistant',
+        parts: [{ type: 'text', text: `🔥 ERROR: ${errorText}` }],
+      })
+    }
+    
+
     } catch (err: any) {
       chat.value.messages.push({
         id: `error-${Date.now()}`,
@@ -116,23 +162,6 @@ onMounted(async () => {
         parts: [{ type: 'text', text: err.message || String(err) }],
       })
     }
-  }
-
-  // ⭐ 保留你原来处理 text/error 的逻辑，但不会再用到了
-  if (text) {
-    chat.value.messages.push({
-      id: `initial-${Date.now()}`,
-      role: 'assistant',
-      parts: [{ type: 'text', text }],
-    })
-  }
-
-  if (error) {
-    chat.value.messages.push({
-      id: `error-${Date.now()}`,
-      role: 'assistant',
-      parts: [{ type: 'text', text: error }],
-    })
   }
 })
 
@@ -208,10 +237,10 @@ onMounted(async () => {
           class="[view-transition-name:chat-prompt]"
           @submit="handleSubmit"
         >
-          <template #footer>
+        <UChatPromptSubmit color="neutral" />
+          <!-- <template #footer>
             <ModelSelect v-model="model" />
-            <UChatPromptSubmit color="neutral" />
-          </template>
+          </template> -->
         </UChatPrompt>
       </div>
 

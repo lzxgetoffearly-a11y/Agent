@@ -144,7 +144,7 @@ defineShortcuts({
         </UNavigationMenu>
       </template>
 
-      <template #footer="{ collapsed }">
+     <!--  <template #footer="{ collapsed }">
         <UserMenu v-if="loggedIn" :collapsed="collapsed" />
         <UButton
           v-else
@@ -155,7 +155,7 @@ defineShortcuts({
           class="w-full"
           @click="openInPopup('/auth/github')"
         />
-      </template>
+      </template> -->
     </UDashboardSidebar>
 
     <UDashboardSearch
