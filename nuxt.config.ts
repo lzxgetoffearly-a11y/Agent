@@ -4,6 +4,7 @@ export default defineNuxtConfig({
     '@nuxt/eslint',
     '@nuxt/ui',
     '@nuxtjs/mdc',
+    '@vueuse/nuxt',
     'nuxt-auth-utils',
     'nuxt-charts'
   ],

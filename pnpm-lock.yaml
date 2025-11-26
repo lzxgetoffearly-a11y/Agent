@@ -32,6 +32,9 @@ importers:
       '@vueuse/core':
         specifier: ^14.0.0
         version: 14.0.0(vue@3.5.25(typescript@5.9.3))
+      '@vueuse/nuxt':
+        specifier: ^14.0.0
+        version: 14.0.0(magicast@0.5.1)(nuxt@4.2.1(@parcel/watcher@2.5.1)(@types/node@24.10.1)(@vue/compiler-sfc@3.5.25)(db0@0.3.4(drizzle-orm@0.44.7(@opentelemetry/api@1.9.0)(pg@8.16.3)))(drizzle-orm@0.44.7(@opentelemetry/api@1.9.0)(pg@8.16.3))(eslint@9.39.1(jiti@2.6.1))(ioredis@5.8.2)(lightningcss@1.30.2)(magicast@0.5.1)(optionator@0.9.4)(rollup@4.53.3)(terser@5.44.1)(typescript@5.9.3)(vite@7.2.4(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(yaml@2.8.1))(vue-tsc@3.1.5(typescript@5.9.3))(yaml@2.8.1))(vue@3.5.25(typescript@5.9.3))
       ai:
         specifier: ^5.0.101
         version: 5.0.101(zod@4.1.13)
@@ -63,7 +66,7 @@ importers:
         specifier: ^0.1.3
         version: 0.1.3(vue@3.5.25(typescript@5.9.3))
       vue:
-        specifier: ^3.5.25
+        specifier: '3'
         version: 3.5.25(typescript@5.9.3)
     devDependencies:
       '@nuxt/eslint':
@@ -2435,6 +2438,12 @@ packages:
 
   '@vueuse/metadata@14.0.0':
     resolution: {integrity: sha512-6yoGqbJcMldVCevkFiHDBTB1V5Hq+G/haPlGIuaFZHpXC0HADB0EN1ryQAAceiW+ryS3niUwvdFbGiqHqBrfVA==}
+
+  '@vueuse/nuxt@14.0.0':
+    resolution: {integrity: sha512-6DNZ1DLw3UI52TtVX4jmL8oD/L3jFgtWeQmsSXP+0myMhpmlBpWB2xe1x5UdwdHly9j1Fq9DI8wz+LsW6wvdeg==}
+    peerDependencies:
+      nuxt: ^3.0.0 || ^4.0.0-0
+      vue: ^3.5.0
 
   '@vueuse/shared@10.11.1':
     resolution: {integrity: sha512-LHpC8711VFZlDaYUXEBbFBCQ7GS3dVU9mjOhhMhXP6txTV4EhYQg/KGnQuvt/sPAtoUKq7VVUnL6mVtFoL42sA==}
@@ -8875,6 +8884,17 @@ snapshots:
   '@vueuse/metadata@13.9.0': {}
 
   '@vueuse/metadata@14.0.0': {}
+
+  '@vueuse/nuxt@14.0.0(magicast@0.5.1)(nuxt@4.2.1(@parcel/watcher@2.5.1)(@types/node@24.10.1)(@vue/compiler-sfc@3.5.25)(db0@0.3.4(drizzle-orm@0.44.7(@opentelemetry/api@1.9.0)(pg@8.16.3)))(drizzle-orm@0.44.7(@opentelemetry/api@1.9.0)(pg@8.16.3))(eslint@9.39.1(jiti@2.6.1))(ioredis@5.8.2)(lightningcss@1.30.2)(magicast@0.5.1)(optionator@0.9.4)(rollup@4.53.3)(terser@5.44.1)(typescript@5.9.3)(vite@7.2.4(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(yaml@2.8.1))(vue-tsc@3.1.5(typescript@5.9.3))(yaml@2.8.1))(vue@3.5.25(typescript@5.9.3))':
+    dependencies:
+      '@nuxt/kit': 4.2.1(magicast@0.5.1)
+      '@vueuse/core': 14.0.0(vue@3.5.25(typescript@5.9.3))
+      '@vueuse/metadata': 14.0.0
+      local-pkg: 1.1.2
+      nuxt: 4.2.1(@parcel/watcher@2.5.1)(@types/node@24.10.1)(@vue/compiler-sfc@3.5.25)(db0@0.3.4(drizzle-orm@0.44.7(@opentelemetry/api@1.9.0)(pg@8.16.3)))(drizzle-orm@0.44.7(@opentelemetry/api@1.9.0)(pg@8.16.3))(eslint@9.39.1(jiti@2.6.1))(ioredis@5.8.2)(lightningcss@1.30.2)(magicast@0.5.1)(optionator@0.9.4)(rollup@4.53.3)(terser@5.44.1)(typescript@5.9.3)(vite@7.2.4(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(yaml@2.8.1))(vue-tsc@3.1.5(typescript@5.9.3))(yaml@2.8.1)
+      vue: 3.5.25(typescript@5.9.3)
+    transitivePeerDependencies:
+      - magicast
 
   '@vueuse/shared@10.11.1(vue@3.5.25(typescript@5.9.3))':
     dependencies:
