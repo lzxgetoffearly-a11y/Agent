@@ -74,12 +74,51 @@ function copy(e: MouseEvent, message: UIMessage) {
   setTimeout(() => { copied.value = false }, 2000)
 }
 
-onMounted(() => {
+onMounted(async () => {
   chat.value = {
     messages: [],
   }
 
-  // 如果首页传来的结果或错误，显示在顶部消息列表
+  const prompt = route.query.prompt as string || ''
+
+  // ⭐ 如果首页传来了 prompt，就主动请求一次后端
+  if (prompt) {
+    // 先把用户消息放进去
+    chat.value.messages.push({
+      id: `user-${Date.now()}`,
+      role: 'user',
+      parts: [{ type: 'text', text: prompt }],
+    })
+
+    try {
+      const res = await fetch('http://localhost:1338/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ input: prompt }),
+      })
+
+      if (!res.ok) {
+        const errText = await res.text()
+        throw new Error(errText)
+      }
+
+      const resultText = await res.text()
+
+      chat.value.messages.push({
+        id: `assistant-${Date.now()}`,
+        role: 'assistant',
+        parts: [{ type: 'text', text: resultText }],
+      })
+    } catch (err: any) {
+      chat.value.messages.push({
+        id: `error-${Date.now()}`,
+        role: 'assistant',
+        parts: [{ type: 'text', text: err.message || String(err) }],
+      })
+    }
+  }
+
+  // ⭐ 保留你原来处理 text/error 的逻辑，但不会再用到了
   if (text) {
     chat.value.messages.push({
       id: `initial-${Date.now()}`,
@@ -96,6 +135,7 @@ onMounted(() => {
     })
   }
 })
+
 </script>
 
 <template>

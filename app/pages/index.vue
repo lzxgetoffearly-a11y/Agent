@@ -22,33 +22,13 @@ async function createChat(prompt: string) {
   input.value = prompt
   loading.value = true
 
-  let text = ''
-  let error = ''
-
-  try {
-    const res = await $fetch('http://localhost:1338/ai', {
-      method: 'POST',
-      headers: { "Content-Type": "application/json" },
-      body: { input: prompt },
-    })
-
-    text = (res as any).result || ''
-    error = (res as any).error || ''
-  } catch (err: any) {
-    error = err?.message || '网络错误'
-  } finally {
-    loading.value = false
-  }
-
-  // 跳转 result 页，传递用户输入 + 结果 + 错误
+  // ⭐ 立刻跳转，让 result.vue 自己请求后端
   router.push({
     path: '/result',
-    query: {
-      prompt,
-      text,
-      error,
-    },
+    query: { prompt }
   })
+
+  loading.value = false
 }
 
 function onSubmit() {
