@@ -1,38 +1,36 @@
-
 import cors from "@fastify/cors";
 import Fastify from "fastify";
 import agent from "./agent";
 
-
 async function main() {
-  const app = Fastify({
-    logger: true
-  });
+  const app = Fastify({ logger: true });
 
-  // 必须加这一段（且不要自定义 OPTIONS）
   await app.register(cors, {
     origin: "*",
     methods: ["GET", "POST", "OPTIONS"],
     allowedHeaders: ["Content-Type"],
   });
 
-  // POST /ai
+  // POST /api/ai
   app.post("/ai", async (req, reply) => {
     const { input } = req.body as { input: string };
 
     let resultText = "";
+    let errorText = "";
 
-    await agent(input, {
-      write: (chunk: string) => {
-        resultText += chunk;
-      },
-      end: () => {},
-    });
+    try {
+      await agent(input, {
+        write: (chunk: string) => { resultText += chunk; },
+        end: () => {},
+      });
+    } catch (err: any) {
+      console.error("Server caught agent error:", err);
+      errorText = err?.message || "Unknown server error";
+    }
 
-    return { result: resultText };
+    return { result: resultText, error: errorText };
   });
 
-  // listen
   await app.listen({ port: 1338, host: "0.0.0.0" });
   console.log("Backend running: http://localhost:1338");
 }
