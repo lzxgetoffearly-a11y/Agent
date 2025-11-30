@@ -1,16 +1,18 @@
 export default defineEventHandler(async (event) => {
-  const { input } = await readBody(event);
-    console.log("Nuxt API 收到请求:", input)
+  const body = await readBody(event);
+  const inputs = body.inputs; // 前端就是发的 inputs
+
+  console.log("Nuxt API 收到请求:", inputs);
 
   try {
-    const res = await $fetch("http://localhost:1338/ai", {
+    const res = await $fetch("http://localhost:1338/", {
       method: "POST",
-      body: { input }
+      body: { inputs }
     });
 
     return {
       ok: true,
-      data: res
+      result: res.result || res // 返回 result，前端才能显示
     };
   } catch (err: any) {
     return {

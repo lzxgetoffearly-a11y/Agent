@@ -1,11 +1,33 @@
 <script setup lang="ts">
-import { useModels } from '@/composables/useModels'
-import { nextTick, ref } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+
+const router = useRouter()
+
 const input = ref('')
 const loading = ref(false)
-const { model } = useModels()
-const router = useRouter()
+
+// 进入 result 页面（只负责跳转，不负责请求）
+function onSubmit() {
+  if (!input.value) return
+
+  router.push({
+    path: '/result',
+    query: {
+      q: input.value
+    }
+  })
+}
+
+// 快捷按钮跳 result（不会重复发送）
+function goQuick(text: string) {
+  router.push({
+    path: '/result',
+    query: {
+      q: text
+    }
+  })
+}
 
 const quickChats = [
   { label: 'Why use Nuxt UI?', icon: 'i-logos-nuxt-icon' },
@@ -14,33 +36,11 @@ const quickChats = [
   { label: 'Why should I consider VueUse?', icon: 'i-logos-vueuse' },
   { label: 'Tailwind CSS best practices', icon: 'i-logos-tailwindcss-icon' },
   { label: 'What is the weather in Bordeaux?', icon: 'i-lucide-sun' },
-  { label: 'Show me a chart of sales data', icon: 'i-lucide-line-chart' },
+  { label: 'Show me a chart of sales data', icon: 'i-lucide-line-chart' }
 ]
 
-async function createChat(prompt: string) {
-  input.value = prompt
-  loading.value = true
-
-  // ⭐ 立刻跳转，让 result.vue 自己请求后端
-  router.push({
-    path: '/result',
-    query: { prompt }
-  })
-
-  loading.value = false
-}
-
-function onSubmit() {
-  createChat(input.value)
-}
-
-function setQuickChat(label: string) {
-  input.value = label
-  nextTick(() => {
-    // 触发 UI 刷新，如果需要可聚焦输入框
-    const el = document.querySelector<HTMLInputElement>('.u-chat-prompt-input')
-    el?.focus()
-  })
+function goPreview() {
+  router.push('/preview')
 }
 </script>
 
@@ -53,9 +53,10 @@ function setQuickChat(label: string) {
     <template #body>
       <UContainer class="flex-1 flex flex-col justify-center gap-4 sm:gap-6 py-8">
         <h1 class="text-3xl sm:text-4xl text-highlighted font-bold">
-          Input needs, AI crafts tailored copy instantly!
+          How can I help you today?
         </h1>
 
+        <!-- 输入框 -->
         <UChatPrompt
           v-model="input"
           :status="loading ? 'streaming' : 'ready'"
@@ -63,12 +64,13 @@ function setQuickChat(label: string) {
           variant="subtle"
           @submit="onSubmit"
         >
-          <UChatPromptSubmit color="neutral"/>
-         <!--  <template #footer>
-            <ModelSelect v-model="model" />
-          </template> -->
+          <UChatPromptSubmit color="neutral" />
+          <template #footer>
+            <ModelSelect />
+          </template>
         </UChatPrompt>
 
+        <!-- 快捷按钮 -->
         <div class="flex flex-wrap gap-2">
           <UButton
             v-for="quickChat in quickChats"
@@ -79,7 +81,19 @@ function setQuickChat(label: string) {
             color="neutral"
             variant="outline"
             class="rounded-full"
-            @click="setQuickChat(quickChat.label)"
+            @click="goQuick(quickChat.label)"
+          />
+        </div>
+
+        <div class="mt-8">
+          <UButton
+            label="进入素材预览生成器"
+            icon="i-lucide-arrow-right"
+            size="lg"
+            variant="soft"
+            color="neutral"
+            class="text-gray-600 hover:text-gray-800 hover:bg-gray-200/60 rounded-xl shadow-sm transition"
+            @click="goPreview"
           />
         </div>
       </UContainer>

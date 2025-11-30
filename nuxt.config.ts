@@ -9,6 +9,13 @@ export default defineNuxtConfig({
     'nuxt-charts'
   ],
 
+  unfont: {
+    providers: {
+      google: false,
+      googleicons: false,
+    }
+  },
+
   devtools: {
     enabled: true
   },
