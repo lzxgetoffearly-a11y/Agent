@@ -1,7 +1,7 @@
 
 ---
 
-# 🚀 AI Social & Chatbot Templates – Combined README
+# AI Social & Chatbot Templates – Combined README
 
 This repository combines two powerful AI templates:
 
@@ -14,8 +14,8 @@ You can use them independently or integrate both to build a unified platform tha
 
 # 📑 Table of Contents
 
-* [✨ Overview](#overview)
-* [📌 Template 1 — Blaxel Social Post Generator](#template1)
+* [Overview](#overview)
+* [Template 1 — Blaxel Social Post Generator](#template1)
 
   * Features
   * Quick Start
@@ -23,7 +23,7 @@ You can use them independently or integrate both to build a unified platform tha
   * Usage
   * Deployment
   * Project Structure
-* [📌 Template 2 — Nuxt AI Chatbot Template](#template2)
+* [Template 2 — Nuxt AI Chatbot Template](#template2)
 
   * Features
   * Quick Start
@@ -37,7 +37,7 @@ You can use them independently or integrate both to build a unified platform tha
 
 ---
 
-# <a id="overview"></a>✨ Overview
+# <a id="overview"></a>Overview
 
 This repository includes **two AI templates designed for different but complementary use cases**:
 
@@ -54,9 +54,9 @@ When combined, you can build a fully integrated solution:
 
 ---
 
-# <a id="template1"></a>📌 Template 1 — Blaxel Social Post Generator Agent
+# <a id="template1"></a>Template 1 — Blaxel Social Post Generator Agent
 
-## ✨ Features
+## Features
 
 * Intelligent social media post generation from URLs or themes
 * Built-in web crawler for public website extraction
@@ -146,9 +146,9 @@ bl deploy
 
 ---
 
-# <a id="template2"></a>📌 Template 2 — Nuxt AI Chatbot Template
+# <a id="template2"></a>Template 2 — Nuxt AI Chatbot Template
 
-## ✨ Features
+## Features
 
 * ⚡ Streaming AI responses powered by **AI SDK v5**
 * 🤖 Multiple model providers via **Vercel AI Gateway**
