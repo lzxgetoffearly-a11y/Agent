@@ -21,10 +21,10 @@ const chat = ref<any>(null)
 const components = { pre: ProseStreamPre as unknown as DefineComponent }
 
 async function callAI(msg: string) {
-  const res = await fetch('/api/ai', {
+  const res = await fetch('http://localhost:1338/ai', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ inputs: msg })
+    body: JSON.stringify({ input: msg })
   })
 
   const raw = await res.text()
