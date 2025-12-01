@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>社交帖子生成器 - 最终修正版 (修复朋友圈个人页文案截断)</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    
+    <style>
+        /* 核心预览卡片样式 - 保持深邃的黑色 */
+        .preview-content {
+            background-color: #111111;
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        /* 手机边框样式（模拟 iPhone 14/15 Pro） */
+        .iphone-frame {
+            box-sizing: content-box;
+            border: 10px solid #1f2937; /* 深灰色边框 */
+            border-radius: 40px;
+            padding: 5px; /* 屏幕和边框的距离 */
+            box-shadow: 
+                0 0 0 1px #4b5563, /* 内部细线 */
+                0 0 0 10px rgba(0, 0, 0, 0.15), /* 外部阴影 */
+                0 20px 50px rgba(0, 0, 0, 0.4);
+            position: relative;
+            overflow: hidden; /* 裁剪刘海区域 */
+        }
+
+        /* 灵动岛 / 听筒区域 */
+        .dynamic-island {
+            width: 100px;
+            height: 25px;
+            background: #111111;
+            border-radius: 12px;
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 20;
+        }
+
+        /* 微信九宫格 */
+        .wx-grid { display: grid; gap: 4px; }
+        .wx-grid-1 { grid-template-columns: 1fr; max-width: 60%; }
+        .wx-grid-3 { grid-template-columns: repeat(3, 1fr); width: 270px; }
+        .wx-grid-4 { grid-template-columns: repeat(2, 1fr); width: 180px; } /* 4张图用 2x2 */
+        
+        /* 隐藏滚动条 */
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; /* IE and Edge */ scrollbar-width: none; /* Firefox */ }
+
+        /* 文案截断类 (确保 line-clamp-2 正常工作) */
+        .line-clamp-2 {
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            -webkit-line-clamp: 2; /* 限制为 2 行 */
+        }
+    </style>
+</head>
+<body class="bg-white h-screen overflow-hidden text-[#333]">
+
+<div id="app" class="flex h-full">
+
+    <div class="w-[400px] flex-shrink-0 border-r border-gray-200 bg-white flex flex-col p-8 h-full overflow-y-auto z-20 shadow-xl">
+        <h2 class="text-2xl font-bold mb-6 text-black">输入文案</h2>
+        
+        <div class="mb-8">
+            <textarea 
+                v-model="postData.content"
+                class="w-full h-48 p-4 border border-gray-300 rounded-xl text-base focus:ring-2 focus:ring-black focus:border-black outline-none resize-none placeholder-gray-400 shadow-sm"
+                placeholder="在此输入文案..."
+            ></textarea>
+        </div>
+
+        <h2 class="text-xl font-bold mb-4 text-black">上传图片</h2>
+        
+        <div class="flex flex-col gap-4">
+            <div class="flex items-center gap-3">
+                <label class="px-6 py-3 bg-gray-100 border border-gray-300 rounded-lg text-sm font-bold cursor-pointer hover:bg-gray-200 transition">
+                    选择文件
+                    <input type="file" multiple accept="image/*" class="hidden" @change="handleFileUpload">
+                </label>
+                <span class="text-sm text-gray-500 font-medium">{{ images.length > 0 ? `已选 ${images.length} 张` : '未选择文件' }}</span>
+            </div>
+
+            <div class="grid grid-cols-3 gap-3 mt-2">
+                <div v-for="(img, idx) in images" :key="idx" class="relative group aspect-square bg-gray-100 rounded-lg overflow-hidden border border-gray-200">
+                    <img :src="img" class="w-full h-full object-cover">
+                    <button @click="removeImage(idx)" class="absolute inset-0 bg-black/50 hidden group-hover:flex items-center justify-center text-white text-sm font-bold">删除</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex-1 bg-white flex flex-col h-full overflow-hidden relative">
+        
+        <div class="h-16 border-b border-gray-200 flex items-center px-10 gap-10 bg-white sticky top-0 z-10">
+            <button 
+                v-for="tab in mainTabs" 
+                :key="tab.id"
+                @click="currentMainTab = tab.id"
+                class="h-full text-base font-medium relative transition-colors"
+                :class="currentMainTab === tab.id ? 'text-black font-bold' : 'text-gray-400 hover:text-gray-600'"
+            >
+                {{ tab.name }}
+                <div v-if="currentMainTab === tab.id" class="absolute bottom-0 left-0 w-full h-[3px] bg-blue-600"></div>
+            </button>
+        </div>
+
+        <div class="flex-1 bg-white p-10 overflow-y-auto flex items-start justify-center">
+            
+            <div v-if="currentMainTab === 'xiaohongshu'" class="flex gap-20 items-start p-5">
+                
+                <div class="transform scale-[1.25] origin-top-left flex-shrink-0 w-[420px] mt-8">
+                    <div class="text-sm font-bold text-gray-800 mb-4 ml-4">首页流 (双列瀑布流) 预览</div>
+                    
+                    <div class="iphone-frame w-[360px] h-[720px]">
+                        <div class="dynamic-island"></div>
+                        <div class="absolute top-0 w-full h-10 flex items-center justify-between px-4 text-xs font-medium z-10 text-white">
+                            <span>12:20</span>
+                            <span class="flex items-center gap-1"><i class="ri-signal-fill"></i> 100% <i class="ri-battery-fill"></i></span>
+                        </div>
+                        
+                        <div class="absolute inset-0 pt-10 px-2 pb-5 overflow-y-auto hide-scrollbar bg-white">
+                            <div class="sticky top-0 bg-white pt-2 pb-2 z-10">
+                                <div class="flex items-center justify-center mb-3 text-lg font-bold">
+                                    <span class="text-gray-900 mx-2">关注</span>
+                                    <span class="text-black mx-2 border-b-2 border-black">发现</span>
+                                    <span class="text-gray-500 mx-2">附近</span>
+                                </div>
+                            </div>
+
+                            <div class="flex justify-between gap-2 mt-2">
+                                <div class="flex flex-col gap-3 w-1/2">
+                                    <div class="bg-white rounded-xl overflow-hidden shadow-lg border border-gray-100 pb-2">
+                                        <div class="aspect-[3/4] bg-gray-100 relative">
+                                            <img v-if="images.length" :src="images[0]" class="w-full h-full object-cover">
+                                            <div v-else class="flex items-center justify-center h-full text-gray-300 text-xs">图片预览</div>
+                                        </div>
+                                        <div class="px-2 pt-2">
+                                            <div class="text-[11px] font-bold text-gray-900 line-clamp-2 leading-snug mb-1">
+                                                {{ postData.content || '文案预览区域...' }}
+                                            </div>
+                                            <div class="flex justify-between items-center text-[9px] text-gray-500">
+                                                <div class="flex items-center gap-1">
+                                                    <div class="w-3 h-3 bg-gray-200 rounded-full"></div>
+                                                    <span>Bryce</span>
+                                                </div>
+                                                <span class="flex items-center gap-0.5"><i class="ri-heart-line"></i> 123</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100 pb-2">
+                                        <div class="aspect-[3/4] bg-gray-300 relative">
+                                            <img src="https://picsum.photos/seed/xhs-a/300/400" class="w-full h-full object-cover">
+                                        </div>
+                                        <div class="px-2 pt-2"><div class="text-[11px] font-bold text-gray-900 line-clamp-2">模拟其他帖子标题</div></div>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex flex-col gap-3 w-1/2">
+                                    <div class="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100 pb-2">
+                                        <div class="aspect-[3/4] bg-gray-300 relative">
+                                            <img src="https://picsum.photos/seed/xhs-b/300/500" class="w-full h-full object-cover">
+                                        </div>
+                                        <div class="px-2 pt-2"><div class="text-[11px] font-bold text-gray-900 line-clamp-2">模拟其他帖子标题</div></div>
+                                    </div>
+                                    <div class="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100 pb-2">
+                                        <div class="aspect-[3/4] bg-gray-300 relative">
+                                            <img src="https://picsum.photos/seed/xhs-c/300/450" class="w-full h-full object-cover">
+                                        </div>
+                                        <div class="px-2 pt-2"><div class="text-[11px] font-bold text-gray-900 line-clamp-2">另一个热门帖子</div></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="transform scale-[1.25] origin-top-left flex-shrink-0 w-[420px] mt-8">
+                    <div class="text-sm font-bold text-gray-800 mb-4 ml-4">发布页 (详情页) 预览</div>
+                    <div class="iphone-frame w-[360px] h-[720px] bg-white">
+                        <div class="dynamic-island"></div>
+                        <div class="absolute top-0 w-full h-10 flex items-center justify-between px-4 text-xs font-medium z-10 text-white">
+                            <span>12:20</span>
+                            <span class="flex items-center gap-1"><i class="ri-signal-fill"></i> 100% <i class="ri-battery-fill"></i></span>
+                        </div>
+                        
+                        <div class="absolute inset-0 pt-10 overflow-y-auto hide-scrollbar preview-content bg-[#111] rounded-3xl">
+                            
+                            <div class="aspect-[3/4] bg-[#222] relative flex items-center justify-center overflow-hidden">
+                                <img v-if="images.length > 0" :src="images[0]" class="w-full h-full object-cover">
+                                <div v-else class="text-gray-500 text-sm">封面预览</div>
+                            </div>
+
+                            <div class="p-5 min-h-[140px] flex flex-col justify-between">
+                                <div>
+                                    <h3 class="font-bold text-white text-lg mb-2 leading-snug">
+                                        {{ postData.content ? postData.content.substring(0, 20) : '2025年怎么过这么快' }}...
+                                    </h3>
+                                    <div class="text-red-400 text-xs mb-4 font-medium">
+                                        #示例标签 #小红书排版
+                                    </div>
+                                </div>
+
+                                <div class="flex justify-between items-center text-gray-400 text-xs border-t border-white/10 pt-3">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-5 h-5 rounded-full bg-gray-500"></div>
+                                        <span>Bryce</span>
+                                    </div>
+                                    <div class="flex gap-3">
+                                        <span class="flex items-center gap-1"><i class="ri-heart-line"></i> 123</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+
+            <div v-if="currentMainTab === 'wechat'" class="flex gap-20 items-start p-5">
+                
+                <div class="transform scale-[1.25] origin-top-left flex-shrink-0 w-[420px] mt-8">
+                    <div class="text-sm font-bold text-gray-800 mb-4 ml-4">朋友圈详情页预览</div>
+                    <div class="iphone-frame w-[360px] h-[720px] bg-white">
+                        <div class="dynamic-island"></div>
+                        <div class="absolute top-0 w-full h-10 flex items-center justify-between px-4 text-xs font-medium z-10 text-white">
+                            <span>23:34</span>
+                            <span class="flex items-center gap-1"><i class="ri-signal-fill"></i> 72 <i class="ri-battery-fill"></i></span>
+                        </div>
+
+                        <div class="absolute inset-0 pt-10 overflow-y-auto hide-scrollbar preview-content bg-[#111] rounded-3xl p-5">
+                            
+                            <div class="flex items-center gap-4 mb-4">
+                                <div class="w-10 h-10 bg-gray-700 rounded-lg overflow-hidden shrink-0"></div>
+                                <div>
+                                    <div class="font-bold text-lg text-white tracking-wide">Bryce</div>
+                                </div>
+                            </div>
+
+                            <div class="text-white text-base mb-4 whitespace-pre-wrap leading-relaxed tracking-wide">
+                                {{ postData.content || '这里显示生成的文案...' }}
+                            </div>
+
+                            <div v-if="images.length > 0" class="wx-grid mb-4" :class="getGridClass(images.length)">
+                                <div v-for="(img, idx) in images" :key="idx" 
+                                    class="bg-gray-800 rounded-sm overflow-hidden cursor-pointer aspect-square"
+                                    :class="images.length === 1 ? 'aspect-auto max-h-[250px]' : ''">
+                                    <img :src="img" class="w-full h-full object-cover">
+                                </div>
+                            </div>
+
+                            <div class="flex justify-between items-center mt-2">
+                                <div class="text-gray-400 text-xs font-medium">2025年9月28日 00:34</div>
+                                <div class="w-6 h-4 bg-[#2a2a2a] rounded"></div>
+                            </div>
+                            
+                            <div class="mt-3 bg-[#222] rounded px-3 py-2 flex items-center gap-2">
+                                <i class="ri-heart-line text-gray-400 text-sm"></i>
+                                <div class="text-xs text-gray-400 font-bold">123</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="transform scale-[1.25] origin-top-left flex-shrink-0 w-[420px] mt-8">
+                    <div class="text-sm font-bold text-gray-800 mb-4 ml-4">朋友圈个人页预览</div>
+                    <div class="iphone-frame w-[360px] h-[720px] bg-white">
+                        <div class="dynamic-island"></div>
+                        <div class="absolute top-0 w-full h-10 flex items-center justify-between px-4 text-xs font-medium z-10 text-white">
+                            <span>23:34</span>
+                            <span class="flex items-center gap-1"><i class="ri-signal-fill"></i> 72 <i class="ri-battery-fill"></i></span>
+                        </div>
+
+                        <div class="absolute inset-0 pt-10 overflow-y-auto hide-scrollbar preview-content bg-[#111] rounded-3xl">
+                            
+                            <div class="h-40 bg-gray-800 relative mb-14 shrink-0">
+                                <img src="https://picsum.photos/seed/cover/800/600" class="w-full h-full object-cover opacity-60">
+                                <div class="absolute -bottom-10 right-4 flex gap-4 items-end">
+                                    <div class="text-white font-bold mb-4 text-lg drop-shadow-md">Bryce</div>
+                                    <div class="w-16 h-16 bg-gray-600 rounded-xl border-4 border-[#111] overflow-hidden shadow-lg"></div>
+                                </div>
+                            </div>
+
+                            <div class="px-4 flex flex-col gap-6 pb-10">
+                                <div class="flex gap-3 items-start">
+                                    <div class="w-10 pt-1">
+                                        <span class="font-bold text-xl text-white leading-none block">今天</span>
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="flex gap-2 mb-2 flex-wrap">
+                                            <div v-if="images.length > 0" class="w-20 h-20 bg-[#222] overflow-hidden">
+                                                <img :src="images[0]" class="w-full h-full object-cover">
+                                            </div>
+                                            <div v-if="images.length === 0" class="w-20 h-20 bg-[#222] flex items-center justify-center text-gray-600 text-xs">
+                                                无图
+                                            </div>
+                                        </div>
+                                        <div class="text-gray-400 text-xs leading-snug line-clamp-2 bg-[#1a1a1a] p-2 rounded h-10" v-if="postData.content">
+                                            {{ postData.content }}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="flex gap-3 items-start opacity-50">
+                                    <div class="w-10 pt-1">
+                                        <span class="font-bold text-xl text-white leading-none block">23</span>
+                                        <span class="text-xs text-gray-400 block mt-0.5">11月</span>
+                                    </div>
+                                    <div class="flex-1 flex gap-2">
+                                        <div class="w-20 h-20 bg-[#222] overflow-hidden">
+                                            <img src="https://picsum.photos/seed/old/200/200" class="w-full h-full object-cover grayscale">
+                                        </div>
+                                        <div class="text-gray-400 text-xs pt-1 line-clamp-2">
+                                            去年今日的精彩瞬间，巴厘岛的阳光和沙滩，真的太想念了！
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const { createApp, ref, reactive } = Vue;
+
+    createApp({
+        setup() {
+            // 默认文案较长，用于测试截断效果
+            const postData = reactive({
+                content: '2025年怎么过这么快\n\n等我老了我也要去Sana抱抱... Exciting times in cinema! With highly anticipated films like "Dune: Part Two" and new Marvel entries lining up for 2025, they are gearing up for big blockbusters. What\'s on your watchlist? Comment below your top pick for 2025, and let\'s discuss what makes a film legendary! #FutureMovies #2025Film'
+            });
+
+            const images = ref([]);
+            const currentMainTab = ref('xiaohongshu');
+            const mainTabs = [
+                { id: 'xiaohongshu', name: '小红书预览 (首页流 & 发布页)' },
+                { id: 'wechat', name: '朋友圈预览 (详情页 & 个人页)' },
+            ];
+
+            const handleFileUpload = (e) => {
+                const files = e.target.files;
+                if (!files) return;
+                Array.from(files).forEach(file => {
+                    const url = URL.createObjectURL(file);
+                    images.value.push(url);
+                });
+                e.target.value = '';
+            };
+
+            const removeImage = (index) => {
+                const urlToRemove = images.value[index];
+                URL.revokeObjectURL(urlToRemove); 
+                images.value.splice(index, 1);
+            };
+
+            const getGridClass = (count) => {
+                if (count === 1) return 'wx-grid-1';
+                if (count === 4) return 'wx-grid-4'; // 4张图用 2x2 布局
+                if (count <= 9) return 'wx-grid-3'; 
+                return 'wx-grid-3';
+            };
+
+            return { postData, images, currentMainTab, mainTabs, handleFileUpload, removeImage, getGridClass };
+        }
+    }).mount('#app');
+</script>
+
+</body>
+</html>

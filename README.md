@@ -1,67 +1,187 @@
-# Nuxt AI Chatbot Template
 
-[![Nuxt UI](https://img.shields.io/badge/Made%20with-Nuxt%20UI-00DC82?logo=nuxt&labelColor=020420)](https://ui.nuxt.com)
+---
 
-Full-featured AI Chatbot Nuxt application with authentication, chat history, multiple pages, collapsible sidebar, keyboard shortcuts, light & dark mode, command palette and more. Built using [Nuxt UI](https://ui.nuxt.com) components and integrated with [AI SDK v5](https://sdk.vercel.ai) for a complete chat experience.
+# Crawl2Post: AI-Powered Social Media Post Generator
 
-- [Live demo](https://chat-template.nuxt.dev/)
-- [Documentation](https://ui.nuxt.com/docs/getting-started/installation/nuxt)
+This repository provides a powerful AI-driven solution for automatically generating social media posts from URLs or themes. It integrates **Web Crawling**, **Semantic Analysis**, and **AI Content Generation** to create engaging posts tailored for platforms like Twitter, LinkedIn, and Instagram.
 
-<a href="https://chat-template.nuxt.dev/" target="_blank">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://ui.nuxt.com/assets/templates/nuxt/chat-dark.png">
-    <source media="(prefers-color-scheme: light)" srcset="https://ui.nuxt.com/assets/templates/nuxt/chat-light.png">
-    <img alt="Nuxt AI Chatbot Template" src="https://ui.nuxt.com/assets/templates/nuxt/chat-light.png">
-  </picture>
-</a>
+---
+
+# 📑 Table of Contents
+
+* [Overview](#overview)
+* [Template 1 — Blaxel Social Post Generator](#template1)
+
+  * Features
+  * Quick Start
+  * Installation
+  * Usage
+  * Deployment
+  * Project Structure
+* [Template 2 — Nuxt AI Chatbot Template](#template2)
+
+  * Features
+  * Quick Start
+  * Environment Setup
+  * Development & Production
+  * Deployment
+* [🛠 Troubleshooting](#troubleshooting)
+* [🤝 Contributing](#contributing)
+* [🆘 Support](#support)
+* [📄 License](#license)
+
+---
+
+# <a id="overview"></a>Overview
+
+This repository includes **two AI templates designed for different but complementary use cases**:
+
+| Template                               | Purpose                                              | Tech Stack                                        |
+| -------------------------------------- | ---------------------------------------------------- | ------------------------------------------------- |
+| **Blaxel Social Post Generator Agent** | Generate social media posts from URLs or text themes | TypeScript · Vercel AI SDK · Blaxel Platform      |
+| **Nuxt AI Chatbot Template**           | Build a modern AI Chat Web App                       | Nuxt 3 · Nuxt UI · PostgreSQL · Vercel AI Gateway |
+
+When combined, you can build a fully integrated solution:
+
+➡ User interacts through **Chatbot**
+➡ Chatbot triggers **Social Post Generator Agent**
+➡ System outputs **high-quality social media content with conversational refinement**
+
+---
+
+# <a id="template1"></a>Template 1 — Blaxel Social Post Generator Agent
 
 ## Features
 
-- ⚡️ **Streaming AI messages** powered by the [AI SDK v5](https://sdk.vercel.ai)
-- 🤖 **Multiple model support** via various AI providers with built-in AI Gateway support
-- 🔐 **Authentication** via [nuxt-auth-utils](https://github.com/atinux/nuxt-auth-utils)
-- 💾 **Chat history persistence** using PostgreSQL database and [Drizzle ORM](https://orm.drizzle.team)
-- 🚀 **Easy deploy** to Vercel with zero configuration
+* Intelligent social media post generation from URLs or themes
+* Built-in web crawler for public website extraction
+* Semantic search integration for theme discovery
+* Character-optimized, professional formatting
+* Streaming responses
+* Fully typed TypeScript implementation
+* One-command deployment to Blaxel
 
-## Quick Start
+---
+
+## 🚀 Quick Start
+
+```bash
+git clone https://github.com/blaxel-ai/template-social-post-generator.git
+cd template-social-post-generator
+npm install
+bl serve --hotreload
+```
+
+Test the agent:
+
+```bash
+bl chat --local social-post-generator
+```
+
+Example prompts:
+
+```
+https://blaxel.ai  
+Latest AI trends in 2024  
+```
+
+---
+
+## 💻 Installation
+
+```bash
+npm install
+npm run build
+```
+
+---
+
+## 🔧 Usage
+
+Start development server with hot reload:
+
+```bash
+bl serve --hotreload
+```
+
+Production mode:
+
+```bash
+bl serve
+```
+
+Direct invocation:
+
+```bash
+bl run agent social-post-generator --local --data '{"input": "https://example.com"}'
+```
+
+---
+
+## 🚀 Deployment
+
+```bash
+bl deploy
+```
+
+---
+
+## 📁 Project Structure
+
+| File                        | Description                                 |
+| --------------------------- | ------------------------------------------- |
+| `src/index.ts`              | Fastify server entrypoint                   |
+| `src/agent.ts`              | Core agent logic                            |
+| `src/prompt.md`             | System prompt for content rules             |
+| `src/functions/webcrawl.ts` | Custom web crawler with Markdown conversion |
+| `blaxel.toml`               | Deployment configuration                    |
+| `tsconfig.json`             | TypeScript compiler config                  |
+
+---
+
+---
+
+# <a id="template2"></a>Template 2 — Nuxt AI Chatbot Template
+
+## Features
+
+* ⚡ Streaming AI responses powered by **AI SDK v5**
+* 🤖 Multiple model providers via **Vercel AI Gateway**
+* 🔐 GitHub OAuth authentication
+* 💾 Persistent chat history using PostgreSQL + Drizzle ORM
+* 🌓 Light & dark mode
+* 🎛 Collapsible sidebar, keyboard shortcuts, command palette
+* 🚀 Zero-config deployment to Vercel
+
+---
+
+## 🚀 Quick Start
 
 ```bash
 npm create nuxt@latest -- -t ui/chat
 ```
 
-## Deploy your own
+Or deploy instantly using the Vercel button in the official template repository.
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-name=chat&repository-url=https%3A%2F%2Fgithub.com%2Fnuxt-ui-templates%2Fchat&env=NUXT_SESSION_PASSWORD,NUXT_OAUTH_GITHUB_CLIENT_ID,NUXT_OAUTH_GITHUB_CLIENT_SECRET&products=%5B%7B%22type%22%3A%22integration%22%2C%22group%22%3A%22postgres%22%7D%5D&demo-image=https%3A%2F%2Fui.nuxt.com%2Fassets%2Ftemplates%2Fnuxt%2Fchat-dark.png&demo-url=https%3A%2F%2Fchat-template.nuxt.dev%2F&demo-title=Nuxt%20Chat%20Template&demo-description=An%20AI%20chatbot%20template%20to%20build%20your%20own%20chatbot%20powered%20by%20Nuxt%20MDC%20and%20Vercel%20AI%20SDK.)
+---
 
-## Setup
+## ⚙ Environment Setup
 
-Make sure to install the dependencies:
-
-```bash
-pnpm install
-```
-
-Set up your environment variables by creating a `.env` file:
+Create a `.env` file:
 
 ```env
-# Database
-DATABASE_URL=<your-postgresql-database-url>
+DATABASE_URL=<your-postgresql-url>
 
-# GitHub OAuth (optional, for authentication)
-NUXT_OAUTH_GITHUB_CLIENT_ID=<your-github-oauth-app-client-id>
-NUXT_OAUTH_GITHUB_CLIENT_SECRET=<your-github-oauth-app-client-secret>
+# GitHub OAuth
+NUXT_OAUTH_GITHUB_CLIENT_ID=<client-id>
+NUXT_OAUTH_GITHUB_CLIENT_SECRET=<client-secret>
 
-# AI Configuration via Vercel AI Gateway (unified API for all providers)
-AI_GATEWAY_API_KEY=<your-vercel-ai-gateway-api-key>
+# Vercel AI Gateway (unified AI model API)
+AI_GATEWAY_API_KEY=<vercel-ai-gateway-key>
 
-# Password for nuxt-auth-utils (minimum 32 characters)
-NUXT_SESSION_PASSWORD=<your-password>
+# Minimum 32 characters
+NUXT_SESSION_PASSWORD=<your-session-password>
 ```
-
-> [!TIP]
-> With [Vercel AI Gateway](https://vercel.com/docs/ai-gateway), you don't need individual API keys for OpenAI, Anthropic, etc. The AI Gateway provides a unified API to access hundreds of models through a single endpoint with automatic load balancing, fallbacks, and spend monitoring.
-
-To add authentication with GitHub, you need to [create a GitHub OAuth application](https://github.com/settings/applications/new).
 
 Run database migrations:
 
@@ -69,62 +189,94 @@ Run database migrations:
 pnpm db:migrate
 ```
 
-## Development
+---
 
-Start the development server on `http://localhost:3000`:
+## 🧪 Development
+
+Start local development server:
 
 ```bash
 pnpm dev
 ```
 
-## Production
+Access at:
 
-Build the application for production:
+> [http://localhost:3000](http://localhost:3000)
+
+---
+
+## 📦 Production
+
+Build the production bundle:
 
 ```bash
 pnpm build
 ```
 
-Locally preview production build:
+Preview it locally:
 
 ```bash
 pnpm preview
 ```
 
-Deploy to Vercel:
+---
+
+## 🚀 Deployment (Vercel)
+
+Deploy via CLI:
 
 ```bash
 npx vercel
 ```
 
-Or connect your repository to Vercel for automatic deployments:
+Or connect your repository to Vercel for automatic deployments.
 
-1. Push your code to GitHub
-2. Connect your repository to [Vercel](https://vercel.com)
-3. Configure your environment variables in the Vercel dashboard
-4. Deploy automatically on every push
+Powered by **Vercel AI Gateway**, which provides:
 
-> [!NOTE]
-> Make sure to configure your PostgreSQL database connection and run migrations in your production environment.
+* Unified model API (OpenAI, Anthropic, Google, xAI, etc.)
+* Automatic retries and fallback
+* Spend monitoring
+* Load balancing
 
-The application is configured to use [Vercel AI Gateway](https://vercel.com/docs/ai-gateway) which provides:
+---
 
-- **Unified API**: Access hundreds of AI models through a single endpoint
-- **High Reliability**: Automatic retries and fallbacks between providers
-- **Spend Monitoring**: Track usage and set budgets across all providers
-- **Load Balancing**: Distribute requests for optimal performance
+# <a id="troubleshooting"></a>🛠 Troubleshooting
 
-Simply configure your `AI_GATEWAY_API_KEY` in your Vercel environment variables for production use.
+### Social Post Generator (Blaxel)
 
-## AI Gateway Setup
+* Website not crawling → Check authentication or anti-bot rules
+* Post quality too generic → Verify the prompt file loads correctly
+* TypeScript errors → Reinstall deps or run `npm run build`
 
-1. Create a Vercel account at [vercel.com](https://vercel.com)
-2. Navigate to your [AI Gateway settings](https://vercel.com/dashboard/ai-gateway)
-3. Generate an API key for your project
-4. Add the key to your environment variables as `AI_GATEWAY_API_KEY`
+### Nuxt AI Chatbot
 
-The AI Gateway automatically handles authentication with all supported AI providers including OpenAI, Anthropic, Google, xAI, and many others.
+* OAuth login fails → Verify GitHub callback URL
+* Database not connecting → Check `DATABASE_URL`
+* AI model unavailable → Ensure `AI_GATEWAY_API_KEY` is set
 
-## Renovate integration
+---
 
-Install [Renovate GitHub app](https://github.com/apps/renovate/installations/select_target) on your repository and you are good to go.
+# <a id="contributing"></a>🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push and open a Pull Request
+
+---
+
+# <a id="support"></a>🆘 Support
+
+* Blaxel Documentation: [https://docs.blaxel.ai](https://docs.blaxel.ai)
+* Nuxt UI Docs: [https://ui.nuxt.com](https://ui.nuxt.com)
+* Vercel AI SDK Docs: [https://sdk.vercel.ai](https://sdk.vercel.ai)
+* Join relevant Discord communities for real-time help
+
+---
+
+# <a id="license"></a>📄 License
+
+**MIT License** — both templates are MIT-licensed.
+
+---
+
