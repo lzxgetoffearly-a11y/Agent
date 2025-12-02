@@ -15,8 +15,8 @@ const components = { pre: ProseStreamPre as unknown as DefineComponent }
 
 function goPreview() { router.push('/preview') }
 
-// 流式请求后端 SSE
-async function callAI(msg: string, onChunk: (chunk: string) => void) {
+// SSE 流式请求，每个字符逐字输出
+async function callAI(msg: string, onChar: (char: string) => void) {
   const res = await fetch('http://localhost:1338/ai', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -32,25 +32,31 @@ async function callAI(msg: string, onChunk: (chunk: string) => void) {
     if (done) break
 
     const chunk = decoder.decode(value)
-    chunk.split("\n").forEach(line => {
-  line = line.trim()
-  if (!line) return
+    const lines = chunk.split("\n").map(l => l.trim()).filter(Boolean)
 
-  // 如果有 data: 就截掉，没有也允许
-  if (line.startsWith("data: ")) {
-    line = line.replace(/^data: /, "")
-  }
+    for (const line of lines) {
+      let dataLine = line.startsWith("data: ") ? line.replace(/^data: /, "") : line
+      try {
+        const data = JSON.parse(dataLine)
+        if (data.error === "[DONE]") continue
 
-  try {
-    const data = JSON.parse(line)
-    if (data.error === "[DONE]") return
-    onChunk(data.result)
-  } catch (e) {
-    console.warn("Non-JSON line:", line)
-  }
-})
+        // 逐字输出
+        await writeChars(data.result, onChar)
+      } catch (e) {
+        console.warn("Non-JSON line:", line)
+      }
+    }
   }
 }
+
+async function writeChars(text: string, onChar: (char: string) => void) {
+  for (const char of text) {
+    onChar(char)
+    chat.value = { ...chat.value }
+    await new Promise(r => setTimeout(r, 1)) // 控制每个字符的输出
+  }
+}
+
 
 // 发送消息并更新 UI
 async function sendMessage(msg: string) {
@@ -71,10 +77,9 @@ async function sendMessage(msg: string) {
   }
   chat.value.messages.push(assistantMsg)
 
-  // 流式更新文本
-  await callAI(msg, (chunk) => {
-    assistantMsg.parts[0].text += chunk
-    chat.value = { ...chat.value }
+  // 流式逐字更新
+  await callAI(msg, (char) => {
+    assistantMsg.parts = [{ type: 'text', text: assistantMsg.parts[0].text + char }]
   })
 }
 
