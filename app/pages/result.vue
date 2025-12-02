@@ -1,55 +1,80 @@
 <script setup lang="ts">
-import { getTextFromMessage } from '@nuxt/ui/utils/ai'
 import { useClipboard } from '@vueuse/core'
-import type { DefineComponent, UIMessage } from 'vue'
-import { onMounted, ref } from 'vue'
+import { DefineComponent, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import ProseStreamPre from '../components/prose/PreStream.vue'
 
 const router = useRouter()
-function goPreview() {
-  router.push('/preview')
-}
-
 const route = useRoute()
 const clipboard = useClipboard()
 const copied = ref(false)
 
 const input = ref('')
 const chat = ref<any>(null)
-
 const components = { pre: ProseStreamPre as unknown as DefineComponent }
 
-async function callAI(msg: string) {
+function goPreview() { router.push('/preview') }
+
+// 流式请求后端 SSE
+async function callAI(msg: string, onChunk: (chunk: string) => void) {
   const res = await fetch('http://localhost:1338/ai', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ input: msg })
   })
 
-  const raw = await res.text()
+  const reader = res.body?.getReader()
+  const decoder = new TextDecoder()
+  if (!reader) return
+
+  while (true) {
+    const { value, done } = await reader.read()
+    if (done) break
+
+    const chunk = decoder.decode(value)
+    chunk.split("\n").forEach(line => {
+  line = line.trim()
+  if (!line) return
+
+  // 如果有 data: 就截掉，没有也允许
+  if (line.startsWith("data: ")) {
+    line = line.replace(/^data: /, "")
+  }
+
   try {
-    return JSON.parse(raw)
-  } catch {
-    return { result: raw }
+    const data = JSON.parse(line)
+    if (data.error === "[DONE]") return
+    onChunk(data.result)
+  } catch (e) {
+    console.warn("Non-JSON line:", line)
+  }
+})
   }
 }
 
+// 发送消息并更新 UI
 async function sendMessage(msg: string) {
   if (!msg.trim()) return
 
+  // 用户消息
   chat.value.messages.push({
     id: `user-${Date.now()}`,
     role: 'user',
     parts: [{ type: 'text', text: msg }]
   })
 
-  const data = await callAI(msg)
-
-  chat.value.messages.push({
+  // 助手消息
+  const assistantMsg = {
     id: `assistant-${Date.now()}`,
     role: 'assistant',
-    parts: [{ type: 'text', text: data.result || data.error || 'Unknown error' }]
+    parts: [{ type: 'text', text: "" }]
+  }
+  chat.value.messages.push(assistantMsg)
+
+  // 流式更新文本
+  await callAI(msg, (chunk) => {
+    assistantMsg.parts[0].text += chunk
+    chat.value = { ...chat.value }
   })
 }
 
@@ -59,72 +84,40 @@ function handleSubmit(e: Event) {
   input.value = ''
 }
 
-function copy(e: MouseEvent, message: UIMessage) {
-  clipboard.copy(getTextFromMessage(message))
+function copy(e: MouseEvent, message: any) {
+  clipboard.copy(message.parts.map((p: any) => p.text).join(''))
   copied.value = true
-  setTimeout(() => (copied.value = false), 2000)
+  setTimeout(() => copied.value = false, 2000)
 }
 
-onMounted(async () => {
+onMounted(() => {
   chat.value = { messages: [] }
-
   const prompt = (route.query.q as string) || ''
-  if (!prompt) return
-
-  chat.value.messages.push({
-    id: `user-${Date.now()}`,
-    role: 'user',
-    parts: [{ type: 'text', text: prompt }]
-  })
-
-  const data = await callAI(prompt)
-
-  chat.value.messages.push({
-    id: `assistant-${Date.now()}`,
-    role: 'assistant',
-    parts: [{ type: 'text', text: data.result || data.error || 'Unknown error' }]
-  })
+  if (prompt) sendMessage(prompt)
 })
 </script>
 
 <template>
   <UDashboardPanel id="chat" class="relative" :ui="{ body: 'p-0 sm:p-0' }">
-    <template #header>
-      <DashboardNavbar />
-    </template>
-
+    <template #header><DashboardNavbar /></template>
     <template #body>
       <UContainer class="flex-1 flex flex-col gap-4 sm:gap-6 pt-6 pb-32 items-center">
         <UChatMessages
-          should-auto-scroll
           :messages="chat?.messages"
-          :status="'ready'"
+          should-auto-scroll
           :assistant="{ actions: [{ label: copied ? 'Copied' : 'Copy', icon: copied ? 'i-lucide-copy-check' : 'i-lucide-copy', onClick: copy }] }"
-          :spacing-offset="160"
-          class="lg:pt-(--ui-header-height) pb-4 sm:pb-6 w-full max-w-lg"
         >
           <template #content="{ message }">
-            <div class="*:first:mt-0 *:last:mb-0">
+            <div>
               <template v-for="(part, index) in message.parts" :key="index">
-                <MDCCached
-                  v-if="part.type === 'text'"
-                  :value="part.text"
-                  :cache-key="`${message.id}-${index}`"
-                  :components="components"
-                />
+                <pre>{{ part.text }}</pre>
               </template>
             </div>
           </template>
         </UChatMessages>
       </UContainer>
 
-      <div
-        class="fixed left-1/2 transform -translate-x-1/2 bg-white dark:bg-black p-4
-               border-t border-neutral-200 dark:border-neutral-800 rounded-t-xl shadow-lg"
-        :style="{ bottom: 'calc(var(--ui-navbar-height, 64px))', maxWidth: '640px', width: '95%' }"
-      >
-
-        <!-- 增加底部外边距 mb-4，让按钮与输入框分开 -->
+      <div class="fixed left-1/2 transform -translate-x-1/2 bg-white dark:bg-black p-4 border-t border-neutral-200 dark:border-neutral-800 rounded-t-xl shadow-lg" :style="{ bottom:'64px', maxWidth:'640px', width:'95%'}">
         <div class="flex justify-center mb-4">
           <UButton
             label="进入素材预览生成器"
@@ -136,13 +129,8 @@ onMounted(async () => {
             @click="goPreview"
           />
         </div>
-
-        <UChatPrompt
-          v-model="input"
-          variant="subtle"
-          @submit="handleSubmit"
-        >
-          <UChatPromptSubmit color="neutral" />
+        <UChatPrompt v-model="input" variant="subtle" @submit="handleSubmit">
+          <UChatPromptSubmit color="neutral"/>
         </UChatPrompt>
       </div>
     </template>
