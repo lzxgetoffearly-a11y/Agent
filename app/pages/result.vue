@@ -51,10 +51,18 @@ async function callAI(msg: string, onChar: (char: string) => void) {
   }
 }
 
-async function writeChars(text: string, onChar: (char: string) => void) {
+async function writeChars(text: string, onChar: (char: string) => void,maxLineLength =80) {
+  let currentLineLength = 0
   for (const char of text) {
+    currentLineLength++
+     if (currentLineLength >= maxLineLength || char === '\n') {
+      onChar((char === '\n' ? '' : '\n'))
+      chat.value = { ...chat.value }
+      currentLineLength = 0
+    }
     onChar(char)
     chat.value = { ...chat.value }
+    
     await new Promise(r => setTimeout(r, 1)) // 控制每个字符的输出
   }
 }
