@@ -1,10 +1,22 @@
 <script setup>
-import { reactive, ref } from 'vue'
+import { reactive, ref, onUnmounted } from 'vue'
 
 /* 文案内容 */
 const postData = reactive({
   content:
-    '2025年怎么过这么快\n\n等我老了我也要去Sana抱抱... Exciting times in cinema! With highly anticipated films like "Dune: Part Two" and new Marvel entries lining up for 2025, they are gearing up for big blockbusters. What\'s on your watchlist? Comment below your top pick for 2025, and let\'s discuss what makes a film legendary! #FutureMovies #2025Film'
+    localStorage.getItem('generatedContent')||'Not generated Text...'
+})
+
+// 监听 localStorage 变化，实时更新文案
+const handleStorageChange = (e) => {
+  if (e.key === 'generatedContent') {
+    postData.content = e.newValue || 'Not generated Text...'
+  }
+}
+window.addEventListener('storage', handleStorageChange)
+// 组件卸载时清理事件监听
+onUnmounted(() => {
+  window.removeEventListener('storage', handleStorageChange)
 })
 
 /* 上传图片预览 */
@@ -207,7 +219,7 @@ const getGridClass = (count) => {
             <div v-if="currentMainTab === 'wechat'" class="flex gap-20 items-start p-5">
                 
                 <div class="transform scale-[1.25] origin-top-left flex-shrink-0 w-[420px] mt-8">
-                    <div class="text-sm font-bold text-gray-800 mb-4 ml-4">朋友圈详情页预览</div>
+                    <div class="text-sm font-bold text-gray-800 mb-4 ml-4">WeChat Details Page Preview</div>
                     <div class="iphone-frame w-[360px] h-[720px] bg-white">
                         <div class="dynamic-island"></div>
                         <div class="absolute top-0 w-full h-10 flex items-center justify-between px-4 text-xs font-medium z-10 text-white">
@@ -225,7 +237,7 @@ const getGridClass = (count) => {
                             </div>
 
                             <div class="text-white text-base mb-4 whitespace-pre-wrap leading-relaxed tracking-wide">
-                                {{ postData.content || '这里显示生成的文案...' }}
+                                {{ postData.content || 'Here is the generated text...' }}
                             </div>
 
                             <div v-if="images.length > 0" class="wx-grid mb-4" :class="getGridClass(images.length)">
@@ -243,14 +255,14 @@ const getGridClass = (count) => {
                             
                             <div class="mt-3 bg-[#222] rounded px-3 py-2 flex items-center gap-2">
                                 <i class="ri-heart-line text-gray-400 text-sm"></i>
-                                <div class="text-xs text-gray-400 font-bold">123</div>
+                                <div class="text-xs text-gray-400 font-bold"><i class="ri-heart-line"></i>123</div>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <div class="transform scale-[1.25] origin-top-left flex-shrink-0 w-[420px] mt-8">
-                    <div class="text-sm font-bold text-gray-800 mb-4 ml-4">朋友圈个人页预览</div>
+                    <div class="text-sm font-bold text-gray-800 mb-4 ml-4">WeChat Moments Page Preview</div>
                     <div class="iphone-frame w-[360px] h-[720px] bg-white">
                         <div class="dynamic-island"></div>
                         <div class="absolute top-0 w-full h-10 flex items-center justify-between px-4 text-xs font-medium z-10 text-white">
@@ -271,7 +283,7 @@ const getGridClass = (count) => {
                             <div class="px-4 flex flex-col gap-6 pb-10">
                                 <div class="flex gap-3 items-start">
                                     <div class="w-10 pt-1">
-                                        <span class="font-bold text-xl text-white leading-none block">今天</span>
+                                        <span class="font-bold text-xl text-white leading-none block">Now</span>
                                     </div>
                                     <div class="flex-1">
                                         <div class="flex gap-2 mb-2 flex-wrap">
@@ -279,7 +291,7 @@ const getGridClass = (count) => {
                                                 <img :src="images[0]" class="w-full h-full object-cover">
                                             </div>
                                             <div v-if="images.length === 0" class="w-20 h-20 bg-[#222] flex items-center justify-center text-gray-600 text-xs">
-                                                无图
+                                                No images
                                             </div>
                                         </div>
                                         <div class="text-gray-400 text-xs leading-snug line-clamp-2 bg-[#1a1a1a] p-2 rounded h-10" v-if="postData.content">
@@ -291,14 +303,14 @@ const getGridClass = (count) => {
                                 <div class="flex gap-3 items-start opacity-50">
                                     <div class="w-10 pt-1">
                                         <span class="font-bold text-xl text-white leading-none block">23</span>
-                                        <span class="text-xs text-gray-400 block mt-0.5">11月</span>
+                                        <span class="text-xs text-gray-400 block mt-0.5">Nov</span>
                                     </div>
                                     <div class="flex-1 flex gap-2">
                                         <div class="w-20 h-20 bg-[#222] overflow-hidden">
                                             <img src="https://picsum.photos/seed/old/200/200" class="w-full h-full object-cover grayscale">
                                         </div>
                                         <div class="text-gray-400 text-xs pt-1 line-clamp-2">
-                                            去年今日的精彩瞬间，巴厘岛的阳光和沙滩，真的太想念了！
+                                            Last year today, gracious！
                                         </div>
                                     </div>
                                 </div>

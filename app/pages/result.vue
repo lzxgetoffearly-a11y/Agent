@@ -18,7 +18,7 @@ function goPreview() { router.push('/preview') }
 let loadingInterval: any = null
 
 // SSE 流式请求，每个字符逐字输出
-async function callAI(msg: string, onChar: (char: string) => void) {
+async function callAI(msg: string, onChar: (char: string) => void, assistantMsg: any) {
   const res = await fetch('http://localhost:1338/ai', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -31,7 +31,10 @@ async function callAI(msg: string, onChar: (char: string) => void) {
 
   while (true) {
     const { value, done } = await reader.read()
-    if (done) break
+    if (done){
+      localStorage.setItem('generatedContent',assistantMsg.parts[0].text)//使用localStorage暂时存储
+      break
+    }
 
     const chunk = decoder.decode(value)
     const lines = chunk.split("\n").map(l => l.trim()).filter(Boolean)
@@ -43,7 +46,7 @@ async function callAI(msg: string, onChar: (char: string) => void) {
         if (data.error === "[DONE]") continue
 
         // 逐字输出
-        await writeChars(data.result, onChar)
+        await writeChars(data.result, onChar, assistantMsg)
       } catch (e) {
         console.warn("Non-JSON line:", line)
       }
@@ -51,20 +54,27 @@ async function callAI(msg: string, onChar: (char: string) => void) {
   }
 }
 
-async function writeChars(text: string, onChar: (char: string) => void,maxLineLength =80) {
-  let currentLineLength = 0
+async function writeChars(text: string, onChar: (char: string) => void, assistantMsg: any, maxLineLength = 80 ) {
+  let currentLineLength = 0;
   for (const char of text) {
-    currentLineLength++
-     if (currentLineLength >= maxLineLength || char === '\n') {
-      onChar((char === '\n' ? '' : '\n'))
-      chat.value = { ...chat.value }
-      currentLineLength = 0
+    //换行逻辑
+    if (currentLineLength >= maxLineLength || char === '\n') {
+      const newLine = char === '\n' ? '' : '\n'; // 避免重复换行
+      if (newLine) {
+        onChar(newLine); // 输出自动换行符
+        chat.value = { ...chat.value }; 
+      }
+      currentLineLength = 0; // 重置
     }
     onChar(char)
     chat.value = { ...chat.value }
-    
+    if (char !== '\n') {
+      currentLineLength++;//非换行符才累计
+    }
     await new Promise(r => setTimeout(r, 1)) // 控制每个字符的输出
-  }
+  } 
+  // 打印当前生成的内容（调试用）
+  console.log('当前生成的内容：', assistantMsg.parts[0].text)
 }
 
 // 发送消息并更新 UI，带动态 Loading
@@ -109,9 +119,8 @@ async function sendMessage(msg: string) {
     if (assistantMsg.parts[0].text.startsWith("Getting Result")) {
       assistantMsg.parts = [{ type: 'text', text: '' }]
     }
-    assistantMsg.parts = [{ type: 'text', text: assistantMsg.parts[0].text + char }]
-  })
-}
+    assistantMsg.parts = [{ type: 'text', text: assistantMsg.parts[0].text + char }]}, assistantMsg)
+  }
 
 function handleSubmit(e: Event) {
   e.preventDefault()
